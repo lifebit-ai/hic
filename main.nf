@@ -733,7 +733,7 @@ process merge_stats {
    set val(prefix), file(fstat) from all_mapstat.groupTuple().concat(all_pairstat.groupTuple(), all_rsstat.groupTuple())
 
    output:
-   file("stats/") into mqc_mstats
+   file("stats") into mqc_mstats
    file("*stat") into all_mstats
 
   script:
