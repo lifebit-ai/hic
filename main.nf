@@ -681,7 +681,7 @@ process remove_duplicates {
 
    output:
    set val(sample), file("*.allValidPairs") into ch_vpairs, ch_vpairs_cool
-   file("stats/") into mqc_mergestat
+   file("stats") into mqc_mergestat
    file("*mergestat") into all_mergestat
 
    script:
