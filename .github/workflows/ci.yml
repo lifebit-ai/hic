@@ -1,12 +1,6 @@
 name: nf-core CI
 # This workflow runs the pipeline with the minimal test dataset to check that it completes without any syntax errors
-on:
-  push:
-    branches:
-      - dev
-  pull_request:
-  release:
-    types: [published]
+on: [pull_request]
 
 # Uncomment if we need an edge release of Nextflow again
 # env: NXF_EDGE: 1
@@ -23,7 +17,7 @@ jobs:
     strategy:
       matrix:
         # Nextflow versions: check pipeline minimum and current latest
-        nxf_ver: ['20.04.0', '']
+        nxf_ver: ['20.01.0', '20.04.0', '20.10.0', '']
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
@@ -54,4 +48,4 @@ jobs:
 
       - name: Run pipeline with test data
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker
+          nextflow run ${GITHUB_WORKSPACE} --config conf/test.config
