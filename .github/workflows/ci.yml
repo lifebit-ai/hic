@@ -47,3 +47,39 @@ jobs:
       - name: Run pipeline with test data
         run: |
           nextflow run ${GITHUB_WORKSPACE} --config conf/test.config
+
+  test_cloudos:
+    name: Run workflow tests on CloudOS
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Test with pytest
+        env:
+          CLOUDOS_TOKEN: ${{ secrets.CLOUDOS_TOKEN }}
+        run: |
+          git clone https://github.com/lifebit-ai/cloudos-cli
+          response=$(./cloudos-cli/cloudos.py -a $CLOUDOS_TOKEN -t 5c6d3e9bd954e800b23f8c62 -w 'lifebit-ai-hic' --config ../hic/conf/test.config --project_name "API jobs" --job_name "cloudos-cli test")
+          echo $response
+          id=$(echo $response | cut -f6 -d / -)
+
+          JOB_STATUS='initializing'
+          while [ $JOB_STATUS = "initializing" ] || [ $JOB_STATUS = "running" ]; do
+            sleep 5
+            JOB_STATUS=$(./cloudos-cli/get_job_status.py -a $CLOUDOS_TOKEN -j $id)
+          done
+          
+          if [ $JOB_STATUS = "completed" ]; then
+            echo "Job successfully completed on CloudOS."
+          else
+            echo "Job status: $JOB_STATUS"
+            echo "Error: job $id failed on CLoudOS. Check the job at https://cloudos.lifebit.ai/app/jobs/${id}"
+            exit 123
+          fi
