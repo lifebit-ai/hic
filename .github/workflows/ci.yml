@@ -72,9 +72,6 @@ jobs:
           TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
         run: |
           git clone https://${TOKEN_GITHUB}:x-oauth-basic@github.com/lifebit-ai/cloudos-cli.git
-          ls /home/runner/work/hic/hic/conf/
-          echo "next"
-          ls ${GITHUB_WORKSPACE}
           response=$(./cloudos-cli/cloudos.py -a $CLOUDOS_TOKEN -t $CLOUDOS_WORKSPACE -w 'lifebit-ai-hic' --config ${GITHUB_WORKSPACE}/conf/cloudos_test.config --project_name "CI tests" --job_name "cloudos-cli test")
           echo $response
           id=$(echo $response | cut -f6 -d / -)
@@ -86,9 +83,9 @@ jobs:
           done
           
           if [ $JOB_STATUS = "completed" ]; then
-            echo "Job successfully completed on CloudOS."
+            echo "SUCCESS! Job successfully completed on CloudOS!"
           else
             echo "Job status: $JOB_STATUS"
-            echo "Error: job $id failed on CLoudOS. Check the job at https://cloudos.lifebit.ai/app/jobs/${id}"
+            echo "ERROR: job $id failed on CLoudOS. Check the job at https://cloudos.lifebit.ai/app/jobs/${id}"
             exit 123
           fi
