@@ -8,7 +8,6 @@ on: [push, pull_request]
 jobs:
   test:
     name: Run workflow tests
-    # Only run on push if this is the nf-core dev branch (merged PRs)
     env:
       NXF_VER: ${{ matrix.nxf_ver }}
       NXF_ANSI_LOG: false
