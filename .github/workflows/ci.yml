@@ -72,7 +72,6 @@ jobs:
           TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
         run: |
           git clone https://${TOKEN_GITHUB}:x-oauth-basic@github.com/lifebit-ai/cloudos-cli.git
-          ls /home/runner/work/hic/
           ls /home/runner/work/hic/hic
           
           response=$(./cloudos-cli/cloudos.py -a $CLOUDOS_TOKEN -t $CLOUDOS_WORKSPACE -w 'lifebit-ai-hic' --config ${GITHUB_WORKSPACE}/conf/cloudos_test.config --project_name "CI tests" --job_name "cloudos-cli test")
