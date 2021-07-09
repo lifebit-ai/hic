@@ -8,6 +8,7 @@ on: [push, pull_request]
 jobs:
   test:
     name: Run workflow tests
+    runs-on: ubuntu-latest
     env:
       NXF_VER: ${{ matrix.nxf_ver }}
       NXF_ANSI_LOG: false
