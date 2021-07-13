@@ -1,12 +1,6 @@
 name: nf-core CI
 # This workflow runs the pipeline with the minimal test dataset to check that it completes without any syntax errors
-on:
-  push:
-    branches:
-      - dev
-  pull_request:
-  release:
-    types: [published]
+on: [pull_request]
 
 # Uncomment if we need an edge release of Nextflow again
 # env: NXF_EDGE: 1
@@ -14,8 +8,6 @@ on:
 jobs:
   test:
     name: Run workflow tests
-    # Only run on push if this is the nf-core dev branch (merged PRs)
-    if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/hic') }}
     runs-on: ubuntu-latest
     env:
       NXF_VER: ${{ matrix.nxf_ver }}
@@ -23,7 +15,7 @@ jobs:
     strategy:
       matrix:
         # Nextflow versions: check pipeline minimum and current latest
-        nxf_ver: ['20.04.0', '']
+        nxf_ver: ['20.01.0', '20.04.0', '20.10.0', '']
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
@@ -54,4 +46,46 @@ jobs:
 
       - name: Run pipeline with test data
         run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test,docker
+          nextflow run ${GITHUB_WORKSPACE} --config conf/test.config
+
+  test_cloudos:
+    name: Run workflow tests on CloudOS
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Submit job with cloudos.py 
+        env:
+          CLOUDOS_TOKEN: ${{ secrets.CLOUDOS_TOKEN }}
+          CLOUDOS_WORKSPACE: ${{ secrets.CLOUDOS_WORKSPACE }}
+          TOKEN_GITHUB: ${{ secrets.TOKEN_GITHUB }}
+        run: |
+          git clone https://${TOKEN_GITHUB}:x-oauth-basic@github.com/lifebit-ai/cloudos-cli.git
+          response=$(./cloudos-cli/cloudos.py -a $CLOUDOS_TOKEN -t $CLOUDOS_WORKSPACE -w 'lifebit-ai-hic' --config ${GITHUB_WORKSPACE}/conf/cloudos_test.config --project_name "CI tests" --job_name "cloudos-cli test")
+          echo $response
+          id=$(echo $response | cut -f6 -d / -)
+
+          JOB_STATUS='initializing'
+          while [ $JOB_STATUS = "initializing" ] || [ $JOB_STATUS = "running" ]; do
+            sleep 5
+            JOB_STATUS=$(./cloudos-cli/get_job_status.py -a $CLOUDOS_TOKEN -j $id)
+          done
+          
+          if [ $JOB_STATUS = "completed" ]; then
+            echo "SUCCESS! Job successfully completed on CloudOS!"
+          else
+            echo "Job status: $JOB_STATUS"
+            echo "ERROR: job $id failed on CLoudOS. Check the job at https://cloudos.lifebit.ai/app/jobs/${id}"
+            exit 123
+          fi

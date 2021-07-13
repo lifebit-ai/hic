@@ -14,7 +14,7 @@ log.info Headers.nf_core(workflow, params.monochrome_logs)
 ////////////////////////////////////////////////////
 /* --               PRINT HELP                 -- */
 ////////////////////////////////////////////////////+
-def json_schema = "$projectDir/nextflow_schema.json"
+def json_schema = "$baseDir/nextflow_schema.json"
 if (params.help) {
     def command = "nextflow run nf-core/hic --input '*_R{1,2}.fastq.gz' -profile docker"
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
@@ -66,10 +66,10 @@ if (workflow.profile.contains('awsbatch')) {
 }
 
 // Stage config files
-ch_multiqc_config = file("$projectDir/assets/multiqc_config.yaml", checkIfExists: true)
+ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
 ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
-ch_output_docs = file("$projectDir/docs/output.md", checkIfExists: true)
-ch_output_docs_images = file("$projectDir/docs/images/", checkIfExists: true)
+ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
+ch_output_docs_images = file("$baseDir/docs/images/", checkIfExists: true)
 
 /*
  * input read files
@@ -681,7 +681,7 @@ process remove_duplicates {
 
    output:
    set val(sample), file("*.allValidPairs") into ch_vpairs, ch_vpairs_cool
-   file("stats/") into mqc_mergestat
+   file("stats") into mqc_mergestat
    file("*mergestat") into all_mergestat
 
    script:
@@ -733,7 +733,7 @@ process merge_stats {
    set val(prefix), file(fstat) from all_mapstat.groupTuple().concat(all_pairstat.groupTuple(), all_rsstat.groupTuple())
 
    output:
-   file("stats/") into mqc_mstats
+   file("stats") into mqc_mstats
    file("*stat") into all_mstats
 
   script:
@@ -1147,18 +1147,18 @@ workflow.onComplete {
 
     // Render the TXT template
     def engine = new groovy.text.GStringTemplateEngine()
-    def tf = new File("$projectDir/assets/email_template.txt")
+    def tf = new File("$baseDir/assets/email_template.txt")
     def txt_template = engine.createTemplate(tf).make(email_fields)
     def email_txt = txt_template.toString()
 
     // Render the HTML template
-    def hf = new File("$projectDir/assets/email_template.html")
+    def hf = new File("$baseDir/assets/email_template.html")
     def html_template = engine.createTemplate(hf).make(email_fields)
     def email_html = html_template.toString()
 
     // Render the sendmail template
-    def smail_fields = [ email: email_address, subject: subject, email_txt: email_txt, email_html: email_html, projectDir: "$projectDir", mqcFile: mqc_report, mqcMaxSize: params.max_multiqc_email_size.toBytes() ]
-    def sf = new File("$projectDir/assets/sendmail_template.txt")
+    def smail_fields = [ email: email_address, subject: subject, email_txt: email_txt, email_html: email_html, projectDir: "$baseDir", mqcFile: mqc_report, mqcMaxSize: params.max_multiqc_email_size.toBytes() ]
+    def sf = new File("$baseDir/assets/sendmail_template.txt")
     def sendmail_template = engine.createTemplate(sf).make(smail_fields)
     def sendmail_html = sendmail_template.toString()
 
